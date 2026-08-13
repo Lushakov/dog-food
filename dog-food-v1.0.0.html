@@ -1,0 +1,1155 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#eef1ed">
+  <meta name="color-scheme" content="light">
+  <title>Переход между кормами</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-synthesis: none;
+      --page: #eef1ed;
+      --surface: #fbfcfa;
+      --surface-muted: #f4f6f2;
+      --text: #1f2925;
+      --text-muted: #59655f;
+      --line: #dfe5df;
+      --food-a: #376b58;
+      --food-a-soft: #e5f0eb;
+      --food-b: #8a5729;
+      --food-b-soft: #f5eadf;
+      --shadow: 0 18px 55px rgba(38, 51, 44, 0.1);
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-width: 320px;
+      min-height: 100%;
+      background: var(--page);
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      min-height: 100dvh;
+      margin: 0;
+      display: grid;
+      justify-items: center;
+      align-items: stretch;
+      overflow-x: hidden;
+      background: var(--page);
+      color: var(--text);
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    .app-shell,
+    .error-shell,
+    .noscript-shell {
+      width: 100%;
+      max-width: 430px;
+      min-width: 0;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding-top: max(24px, env(safe-area-inset-top));
+      padding-right: max(18px, env(safe-area-inset-right));
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+      padding-left: max(18px, env(safe-area-inset-left));
+      background: var(--surface);
+    }
+
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .status-card {
+      min-width: 0;
+      padding: 2px 2px 0;
+    }
+
+    .eyebrow {
+      margin: 0 0 9px;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      line-height: 1.35;
+      text-transform: uppercase;
+    }
+
+    .status-title {
+      margin: 0;
+      font-size: clamp(1.6rem, 7vw, 2rem);
+      font-weight: 720;
+      letter-spacing: -0.035em;
+      line-height: 1.12;
+      overflow-wrap: anywhere;
+    }
+
+    .status-detail {
+      margin: 7px 0 0;
+      color: var(--text-muted);
+      font-size: 0.98rem;
+      line-height: 1.45;
+    }
+
+    .status-end {
+      margin: 12px 0 0;
+      color: var(--text-muted);
+      font-size: 0.84rem;
+      line-height: 1.4;
+    }
+
+    .status-start {
+      margin: 10px 0 0;
+      color: var(--text-muted);
+      font-size: 0.84rem;
+      line-height: 1.4;
+    }
+
+    .status-end__label {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--text);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .plan-note {
+      display: inline-flex;
+      max-width: 100%;
+      margin-top: 13px;
+      padding: 7px 10px;
+      border: 1px solid #cfd9d2;
+      border-radius: 999px;
+      background: var(--surface-muted);
+      color: #405049;
+      font-size: 0.78rem;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .portion-section {
+      min-width: 0;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: #ffffff;
+      box-shadow: 0 8px 24px rgba(37, 50, 43, 0.045);
+    }
+
+    .section-heading {
+      margin: 0 0 14px;
+      font-size: 1.03rem;
+      font-weight: 720;
+      letter-spacing: -0.012em;
+      line-height: 1.35;
+    }
+
+    .food-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 7rem), 1fr));
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .food-card {
+      position: relative;
+      min-width: 0;
+      min-height: 154px;
+      padding: 17px 11px 15px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+      border: 1px solid transparent;
+      border-radius: 17px;
+    }
+
+    .food-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      left: 0;
+      height: 4px;
+      background: currentColor;
+    }
+
+    .food-card--a {
+      border-color: #cfdfd7;
+      background: var(--food-a-soft);
+      color: var(--food-a);
+    }
+
+    .food-card--b {
+      border-color: #e5d4c3;
+      background: var(--food-b-soft);
+      color: var(--food-b);
+    }
+
+    .food-name {
+      min-width: 0;
+      margin: 0;
+      color: currentColor;
+      font-size: clamp(0.84rem, 3.9vw, 0.95rem);
+      font-weight: 720;
+      line-height: 1.28;
+      overflow-wrap: anywhere;
+    }
+
+    .food-value {
+      min-width: 0;
+      margin: 13px 0 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 5px;
+    }
+
+    .food-value__number {
+      font-size: clamp(2.75rem, 13.5vw, 3.5rem);
+      font-variant-numeric: tabular-nums;
+      font-weight: 760;
+      letter-spacing: -0.07em;
+      line-height: 0.92;
+    }
+
+    .decimal-part {
+      display: inline-block;
+      margin-left: 0.12em;
+      font-size: 0.52em;
+      letter-spacing: -0.035em;
+      line-height: 1;
+      vertical-align: bottom;
+    }
+
+    .food-value__unit {
+      font-size: 1.05rem;
+      font-weight: 720;
+      line-height: 1;
+    }
+
+    .portion-total {
+      margin: 16px 1px 0;
+      padding-top: 15px;
+      border-top: 1px solid var(--line);
+      color: var(--text-muted);
+      font-size: clamp(1rem, 4.5vw, 1.12rem);
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .portion-total strong {
+      display: inline-block;
+      margin-left: 2px;
+      color: var(--text);
+      font-size: clamp(1.4rem, 6.5vw, 1.7rem);
+      font-variant-numeric: tabular-nums;
+      font-weight: 740;
+      letter-spacing: -0.035em;
+      white-space: nowrap;
+    }
+
+    .portion-total .decimal-part {
+      vertical-align: baseline;
+    }
+
+    .daily-section {
+      min-width: 0;
+      padding: 17px 18px 11px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: var(--surface-muted);
+    }
+
+    .daily-section .section-heading {
+      margin-bottom: 8px;
+      color: #3b4741;
+      font-size: 0.96rem;
+    }
+
+    .daily-list {
+      margin: 0;
+    }
+
+    .daily-row {
+      min-width: 0;
+      padding: 10px 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: baseline;
+      gap: 12px;
+      border-top: 1px solid var(--line);
+    }
+
+    .daily-row:first-child {
+      border-top: 0;
+    }
+
+    .daily-row dt,
+    .daily-row dd {
+      min-width: 0;
+      margin: 0;
+    }
+
+    .daily-row dt {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .daily-row dd {
+      color: #344039;
+      font-size: 0.96rem;
+      font-variant-numeric: tabular-nums;
+      font-weight: 680;
+      line-height: 1.35;
+      white-space: nowrap;
+    }
+
+    .daily-row--total dt,
+    .daily-row--total dd {
+      color: var(--text);
+      font-weight: 740;
+    }
+
+    .error-shell,
+    .noscript-shell {
+      display: grid;
+      place-items: center;
+      text-align: center;
+    }
+
+    .error-card {
+      width: 100%;
+      padding: 28px 20px;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: #ffffff;
+      box-shadow: 0 8px 24px rgba(37, 50, 43, 0.045);
+    }
+
+    .error-card h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      line-height: 1.25;
+    }
+
+    .error-card p {
+      margin: 10px auto 0;
+      max-width: 31ch;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.55;
+    }
+
+    .sr-only {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+
+    @media (min-width: 480px) {
+      body {
+        padding: 16px;
+        align-items: center;
+      }
+
+      .app-shell,
+      .error-shell,
+      .noscript-shell {
+        min-height: 0;
+        max-height: calc(100vh - 32px);
+        max-height: min(932px, calc(100dvh - 32px));
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        border: 1px solid rgba(213, 220, 214, 0.9);
+        border-radius: 28px;
+        box-shadow: var(--shadow);
+        scrollbar-width: thin;
+        scrollbar-color: #bcc6bf transparent;
+      }
+    }
+
+    @media (max-width: 359px) {
+      .app-shell {
+        gap: 15px;
+      }
+
+      .portion-section {
+        padding: 15px;
+      }
+
+      .food-card {
+        min-height: 151px;
+        padding-right: 9px;
+        padding-left: 9px;
+      }
+
+      .daily-section {
+        padding-right: 15px;
+        padding-left: 15px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell" id="app" hidden>
+    <header class="status-card" aria-labelledby="status-title">
+      <p class="eyebrow">Переход между кормами</p>
+      <h1 class="status-title" id="status-title"></h1>
+      <p class="status-detail" id="status-detail"></p>
+      <p class="status-start">Дата старта — 14 августа 2026</p>
+      <p class="status-end">
+        <span class="status-end__label">Сегодня</span>
+        <span id="today-date"></span>
+      </p>
+      <p class="plan-note" id="plan-note" hidden>План на первый день</p>
+    </header>
+
+    <section class="portion-section" aria-labelledby="portion-heading">
+      <h2 class="section-heading" id="portion-heading">На одно кормление</h2>
+      <div class="food-grid">
+        <article class="food-card food-card--a" aria-labelledby="food-a-name">
+          <h3 class="food-name" id="food-a-name">Royal Canin</h3>
+          <p class="food-value">
+            <span class="food-value__number" id="portion-a"><span class="whole-part"></span><span class="decimal-part" hidden></span></span>
+            <span class="food-value__unit">г</span>
+          </p>
+        </article>
+
+        <article class="food-card food-card--b" aria-labelledby="food-b-name">
+          <h3 class="food-name" id="food-b-name">Forza 10 Gastroenteric</h3>
+          <p class="food-value">
+            <span class="food-value__number" id="portion-b"><span class="whole-part"></span><span class="decimal-part" hidden></span></span>
+            <span class="food-value__unit">г</span>
+          </p>
+        </article>
+      </div>
+      <p class="portion-total">Всего в порции — <strong><span id="portion-total"><span class="whole-part"></span><span class="decimal-part" hidden></span></span> г</strong></p>
+    </section>
+
+    <section class="daily-section" aria-labelledby="daily-heading">
+      <h2 class="section-heading" id="daily-heading">За сутки</h2>
+      <dl class="daily-list">
+        <div class="daily-row">
+          <dt>Royal Canin</dt>
+          <dd><span id="daily-a"></span> г</dd>
+        </div>
+        <div class="daily-row">
+          <dt>Forza 10 Gastroenteric</dt>
+          <dd><span id="daily-b"></span> г</dd>
+        </div>
+        <div class="daily-row daily-row--total">
+          <dt>Всего</dt>
+          <dd><span id="daily-total"></span> г</dd>
+        </div>
+      </dl>
+    </section>
+
+    <div class="sr-only" id="day-announcement" aria-live="polite" aria-atomic="true"></div>
+  </main>
+
+  <main class="error-shell" id="error-view" hidden>
+    <div class="error-card">
+      <h1>Ошибка данных расписания</h1>
+      <p>Проверьте данные и откройте страницу снова.</p>
+    </div>
+  </main>
+
+  <noscript>
+    <main class="noscript-shell">
+      <div class="error-card">
+        <h1>Требуется JavaScript</h1>
+        <p>Для расчёта актуального дня требуется JavaScript.</p>
+      </div>
+    </main>
+  </noscript>
+
+  <script type="application/json" id="transition-data">
+{
+  "parameters": {
+    "duration_days": 30,
+    "interpolation": "linear_inclusive",
+    "food_a_daily_norm_grams": 114,
+    "food_b_daily_norm_grams": 215,
+    "initial_ratio_percent": {
+      "food_a": 58,
+      "food_b": 42
+    },
+    "final_ratio_percent": {
+      "food_a": 0,
+      "food_b": 100
+    },
+    "formulas": {
+      "progress_day_d": "t = (d - 1) / (duration_days - 1)",
+      "food_a_percentage": "58 + (0 - 58) * t",
+      "food_b_percentage": "42 + (100 - 42) * t",
+      "food_a_grams": "114 * food_a_percentage / 100",
+      "food_b_grams": "215 * food_b_percentage / 100"
+    },
+    "rounding": {
+      "percentages_decimal_places": 6,
+      "grams_decimal_places": 2
+    }
+  },
+  "schedule": [
+    {
+      "day": 1,
+      "food_a": {
+        "percentage": 58,
+        "grams": 66.12
+      },
+      "food_b": {
+        "percentage": 42,
+        "grams": 90.3
+      },
+      "total_grams": 156.42
+    },
+    {
+      "day": 2,
+      "food_a": {
+        "percentage": 56,
+        "grams": 63.84
+      },
+      "food_b": {
+        "percentage": 44,
+        "grams": 94.6
+      },
+      "total_grams": 158.44
+    },
+    {
+      "day": 3,
+      "food_a": {
+        "percentage": 54,
+        "grams": 61.56
+      },
+      "food_b": {
+        "percentage": 46,
+        "grams": 98.9
+      },
+      "total_grams": 160.46
+    },
+    {
+      "day": 4,
+      "food_a": {
+        "percentage": 52,
+        "grams": 59.28
+      },
+      "food_b": {
+        "percentage": 48,
+        "grams": 103.2
+      },
+      "total_grams": 162.48
+    },
+    {
+      "day": 5,
+      "food_a": {
+        "percentage": 50,
+        "grams": 57
+      },
+      "food_b": {
+        "percentage": 50,
+        "grams": 107.5
+      },
+      "total_grams": 164.5
+    },
+    {
+      "day": 6,
+      "food_a": {
+        "percentage": 48,
+        "grams": 54.72
+      },
+      "food_b": {
+        "percentage": 52,
+        "grams": 111.8
+      },
+      "total_grams": 166.52
+    },
+    {
+      "day": 7,
+      "food_a": {
+        "percentage": 46,
+        "grams": 52.44
+      },
+      "food_b": {
+        "percentage": 54,
+        "grams": 116.1
+      },
+      "total_grams": 168.54
+    },
+    {
+      "day": 8,
+      "food_a": {
+        "percentage": 44,
+        "grams": 50.16
+      },
+      "food_b": {
+        "percentage": 56,
+        "grams": 120.4
+      },
+      "total_grams": 170.56
+    },
+    {
+      "day": 9,
+      "food_a": {
+        "percentage": 42,
+        "grams": 47.88
+      },
+      "food_b": {
+        "percentage": 58,
+        "grams": 124.7
+      },
+      "total_grams": 172.58
+    },
+    {
+      "day": 10,
+      "food_a": {
+        "percentage": 40,
+        "grams": 45.6
+      },
+      "food_b": {
+        "percentage": 60,
+        "grams": 129
+      },
+      "total_grams": 174.6
+    },
+    {
+      "day": 11,
+      "food_a": {
+        "percentage": 38,
+        "grams": 43.32
+      },
+      "food_b": {
+        "percentage": 62,
+        "grams": 133.3
+      },
+      "total_grams": 176.62
+    },
+    {
+      "day": 12,
+      "food_a": {
+        "percentage": 36,
+        "grams": 41.04
+      },
+      "food_b": {
+        "percentage": 64,
+        "grams": 137.6
+      },
+      "total_grams": 178.64
+    },
+    {
+      "day": 13,
+      "food_a": {
+        "percentage": 34,
+        "grams": 38.76
+      },
+      "food_b": {
+        "percentage": 66,
+        "grams": 141.9
+      },
+      "total_grams": 180.66
+    },
+    {
+      "day": 14,
+      "food_a": {
+        "percentage": 32,
+        "grams": 36.48
+      },
+      "food_b": {
+        "percentage": 68,
+        "grams": 146.2
+      },
+      "total_grams": 182.68
+    },
+    {
+      "day": 15,
+      "food_a": {
+        "percentage": 30,
+        "grams": 34.2
+      },
+      "food_b": {
+        "percentage": 70,
+        "grams": 150.5
+      },
+      "total_grams": 184.7
+    },
+    {
+      "day": 16,
+      "food_a": {
+        "percentage": 28,
+        "grams": 31.92
+      },
+      "food_b": {
+        "percentage": 72,
+        "grams": 154.8
+      },
+      "total_grams": 186.72
+    },
+    {
+      "day": 17,
+      "food_a": {
+        "percentage": 26,
+        "grams": 29.64
+      },
+      "food_b": {
+        "percentage": 74,
+        "grams": 159.1
+      },
+      "total_grams": 188.74
+    },
+    {
+      "day": 18,
+      "food_a": {
+        "percentage": 24,
+        "grams": 27.36
+      },
+      "food_b": {
+        "percentage": 76,
+        "grams": 163.4
+      },
+      "total_grams": 190.76
+    },
+    {
+      "day": 19,
+      "food_a": {
+        "percentage": 22,
+        "grams": 25.08
+      },
+      "food_b": {
+        "percentage": 78,
+        "grams": 167.7
+      },
+      "total_grams": 192.78
+    },
+    {
+      "day": 20,
+      "food_a": {
+        "percentage": 20,
+        "grams": 22.8
+      },
+      "food_b": {
+        "percentage": 80,
+        "grams": 172
+      },
+      "total_grams": 194.8
+    },
+    {
+      "day": 21,
+      "food_a": {
+        "percentage": 18,
+        "grams": 20.52
+      },
+      "food_b": {
+        "percentage": 82,
+        "grams": 176.3
+      },
+      "total_grams": 196.82
+    },
+    {
+      "day": 22,
+      "food_a": {
+        "percentage": 16,
+        "grams": 18.24
+      },
+      "food_b": {
+        "percentage": 84,
+        "grams": 180.6
+      },
+      "total_grams": 198.84
+    },
+    {
+      "day": 23,
+      "food_a": {
+        "percentage": 14,
+        "grams": 15.96
+      },
+      "food_b": {
+        "percentage": 86,
+        "grams": 184.9
+      },
+      "total_grams": 200.86
+    },
+    {
+      "day": 24,
+      "food_a": {
+        "percentage": 12,
+        "grams": 13.68
+      },
+      "food_b": {
+        "percentage": 88,
+        "grams": 189.2
+      },
+      "total_grams": 202.88
+    },
+    {
+      "day": 25,
+      "food_a": {
+        "percentage": 10,
+        "grams": 11.4
+      },
+      "food_b": {
+        "percentage": 90,
+        "grams": 193.5
+      },
+      "total_grams": 204.9
+    },
+    {
+      "day": 26,
+      "food_a": {
+        "percentage": 8,
+        "grams": 9.12
+      },
+      "food_b": {
+        "percentage": 92,
+        "grams": 197.8
+      },
+      "total_grams": 206.92
+    },
+    {
+      "day": 27,
+      "food_a": {
+        "percentage": 6,
+        "grams": 6.84
+      },
+      "food_b": {
+        "percentage": 94,
+        "grams": 202.1
+      },
+      "total_grams": 208.94
+    },
+    {
+      "day": 28,
+      "food_a": {
+        "percentage": 4,
+        "grams": 4.56
+      },
+      "food_b": {
+        "percentage": 96,
+        "grams": 206.4
+      },
+      "total_grams": 210.96
+    },
+    {
+      "day": 29,
+      "food_a": {
+        "percentage": 2,
+        "grams": 2.28
+      },
+      "food_b": {
+        "percentage": 98,
+        "grams": 210.7
+      },
+      "total_grams": 212.98
+    },
+    {
+      "day": 30,
+      "food_a": {
+        "percentage": 0,
+        "grams": 0
+      },
+      "food_b": {
+        "percentage": 100,
+        "grams": 215
+      },
+      "total_grams": 215
+    }
+  ]
+}
+  </script>
+
+  <script>
+    "use strict";
+
+    const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
+    const FEEDINGS_PER_DAY = 3;
+    const FIRST_DAY_ORDINAL = Date.UTC(2026, 7, 14) / DAY_IN_MILLISECONDS;
+    const LAST_DAY_ORDINAL = FIRST_DAY_ORDINAL + 29;
+    const MONTHS_GENITIVE = [
+      "января", "февраля", "марта", "апреля", "мая", "июня",
+      "июля", "августа", "сентября", "октября", "ноября", "декабря"
+    ];
+    const WEEKDAYS = [
+      "воскресенье", "понедельник", "вторник", "среда",
+      "четверг", "пятница", "суббота"
+    ];
+
+    function isValidGramValue(value) {
+      return typeof value === "number" && Number.isFinite(value) && value >= 0;
+    }
+
+    function validateSchedule(schedule) {
+      if (!Array.isArray(schedule) || schedule.length !== 30) {
+        throw new Error("Расписание должно содержать ровно 30 дней.");
+      }
+
+      for (let index = 0; index < schedule.length; index += 1) {
+        const row = schedule[index];
+        if (!row || typeof row !== "object" || row.day !== index + 1) {
+          throw new Error("Нарушена последовательность дней расписания.");
+        }
+
+        if (!row.food_a || typeof row.food_a !== "object" ||
+            !row.food_b || typeof row.food_b !== "object") {
+          throw new Error("Для дня " + row.day + " отсутствуют данные одного из кормов.");
+        }
+
+        const foodA = row.food_a.grams;
+        const foodB = row.food_b.grams;
+        const total = row.total_grams;
+        if (!isValidGramValue(foodA) || !isValidGramValue(foodB) || !isValidGramValue(total)) {
+          throw new Error("Для дня " + row.day + " указана некорректная граммовка.");
+        }
+
+        const floatingPointMargin = Number.EPSILON *
+          Math.max(1, Math.abs(foodA), Math.abs(foodB), Math.abs(total)) * 8;
+        if (Math.abs(foodA + foodB - total) > 0.01 + floatingPointMargin) {
+          throw new Error("Суточная сумма не сходится для дня " + row.day + ".");
+        }
+      }
+
+      return schedule;
+    }
+
+    function getLocalDateParts(date) {
+      return {
+        year: date.getFullYear(),
+        monthIndex: date.getMonth(),
+        day: date.getDate()
+      };
+    }
+
+    function getLocalDateKey(parts) {
+      const month = String(parts.monthIndex + 1).padStart(2, "0");
+      const day = String(parts.day).padStart(2, "0");
+      return parts.year + "-" + month + "-" + day;
+    }
+
+    function getUtcDayOrdinal(parts) {
+      return Date.UTC(parts.year, parts.monthIndex, parts.day) / DAY_IN_MILLISECONDS;
+    }
+
+    function formatRussianDate(parts) {
+      return parts.day + " " + MONTHS_GENITIVE[parts.monthIndex] + " " + parts.year;
+    }
+
+    function formatToday(date, parts) {
+      return formatRussianDate(parts) + " · " + WEEKDAYS[date.getDay()];
+    }
+
+    function formatGrams(value) {
+      return value.toFixed(1).replace(/\.0$/, "").replace(".", ",");
+    }
+
+    function buildViewModel(date, schedule) {
+      const parts = getLocalDateParts(date);
+      const ordinal = getUtcDayOrdinal(parts);
+      let phase;
+      let scheduleIndex;
+      let status;
+      let detail;
+      let showPlanNote = false;
+
+      if (ordinal < FIRST_DAY_ORDINAL) {
+        phase = "before";
+        scheduleIndex = 0;
+        status = "До начала перехода";
+        detail = "План перехода ещё не начался";
+        showPlanNote = true;
+      } else if (ordinal > LAST_DAY_ORDINAL) {
+        phase = "after";
+        scheduleIndex = 29;
+        status = "Переход завершён";
+        detail = "Финальный рацион · день 30";
+      } else {
+        phase = "active";
+        scheduleIndex = ordinal - FIRST_DAY_ORDINAL;
+        status = "День " + (scheduleIndex + 1) + " из 30";
+        detail = "";
+      }
+
+      const row = schedule[scheduleIndex];
+      const portionA = row.food_a.grams / FEEDINGS_PER_DAY;
+      const portionB = row.food_b.grams / FEEDINGS_PER_DAY;
+
+      return {
+        phase: phase,
+        day: row.day,
+        status: status,
+        detail: detail,
+        today: formatToday(date, parts),
+        showPlanNote: showPlanNote,
+        portionA: formatGrams(portionA),
+        portionB: formatGrams(portionB),
+        portionTotal: formatGrams(portionA + portionB),
+        dailyA: formatGrams(row.food_a.grams),
+        dailyB: formatGrams(row.food_b.grams),
+        dailyTotal: formatGrams(row.total_grams)
+      };
+    }
+
+    function getDisplayKey(model) {
+      return [
+        model.phase,
+        model.day,
+        model.status,
+        model.detail,
+        model.today,
+        model.showPlanNote,
+        model.portionA,
+        model.portionB,
+        model.portionTotal,
+        model.dailyA,
+        model.dailyB,
+        model.dailyTotal
+      ].join("|");
+    }
+
+    function renderModel(model, elements) {
+      elements.statusTitle.textContent = model.status;
+      elements.statusDetail.textContent = model.detail;
+      elements.statusDetail.hidden = model.detail === "";
+      elements.todayDate.textContent = model.today;
+      elements.planNote.hidden = !model.showPlanNote;
+      renderPortionValue(model.portionA, elements.portionA);
+      renderPortionValue(model.portionB, elements.portionB);
+      renderPortionValue(model.portionTotal, elements.portionTotal);
+      elements.dailyA.textContent = model.dailyA;
+      elements.dailyB.textContent = model.dailyB;
+      elements.dailyTotal.textContent = model.dailyTotal;
+      elements.app.hidden = false;
+    }
+
+    function renderPortionValue(value, element) {
+      const parts = String(value).split(",");
+      const wholePart = element.querySelector(".whole-part");
+      const decimalPart = element.querySelector(".decimal-part");
+      wholePart.textContent = parts[0];
+      decimalPart.textContent = parts.length > 1 ? "," + parts[1] : "";
+      decimalPart.hidden = parts.length === 1;
+    }
+
+    function describeModel(model) {
+      return model.status + ". " + model.detail + ". На одно кормление: " +
+        "Royal Canin — " + model.portionA + " г; " +
+        "Forza 10 Gastroenteric — " + model.portionB + " г; " +
+        "всего — " + model.portionTotal + " г.";
+    }
+
+    function getElements() {
+      return {
+        app: document.getElementById("app"),
+        errorView: document.getElementById("error-view"),
+        statusTitle: document.getElementById("status-title"),
+        statusDetail: document.getElementById("status-detail"),
+        todayDate: document.getElementById("today-date"),
+        planNote: document.getElementById("plan-note"),
+        portionA: document.getElementById("portion-a"),
+        portionB: document.getElementById("portion-b"),
+        portionTotal: document.getElementById("portion-total"),
+        dailyA: document.getElementById("daily-a"),
+        dailyB: document.getElementById("daily-b"),
+        dailyTotal: document.getElementById("daily-total"),
+        announcement: document.getElementById("day-announcement")
+      };
+    }
+
+    function showDataError(elements, error) {
+      console.error("Ошибка данных расписания:", error);
+      elements.app.hidden = true;
+      elements.errorView.hidden = false;
+    }
+
+    function startController(schedule, elements) {
+      let observedDateKey = null;
+      let displayedModelKey = null;
+      let hasRendered = false;
+
+      function refresh() {
+        const now = new Date();
+        const dateParts = getLocalDateParts(now);
+        const dateKey = getLocalDateKey(dateParts);
+        const model = buildViewModel(now, schedule);
+        const modelKey = getDisplayKey(model);
+
+        if (dateKey === observedDateKey && modelKey === displayedModelKey) {
+          return;
+        }
+
+        observedDateKey = dateKey;
+        if (modelKey === displayedModelKey) {
+          return;
+        }
+
+        renderModel(model, elements);
+        if (hasRendered) {
+          elements.announcement.textContent = describeModel(model);
+        }
+
+        displayedModelKey = modelKey;
+        hasRendered = true;
+      }
+
+      refresh();
+      window.setInterval(refresh, 30000);
+      window.addEventListener("focus", refresh);
+      document.addEventListener("visibilitychange", function () {
+        if (document.visibilityState === "visible") {
+          refresh();
+        }
+      });
+      window.addEventListener("pageshow", refresh);
+    }
+
+    (function initialise() {
+      const elements = getElements();
+
+      try {
+        const embeddedData = JSON.parse(document.getElementById("transition-data").textContent);
+        const schedule = validateSchedule(embeddedData.schedule);
+        startController(schedule, elements);
+      } catch (error) {
+        showDataError(elements, error);
+      }
+    }());
+  </script>
+</body>
+</html>
