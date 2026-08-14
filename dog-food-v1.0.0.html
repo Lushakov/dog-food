@@ -900,6 +900,9 @@
     "use strict";
 
     const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
+    const HOUR_IN_MILLISECONDS = 60 * 60 * 1000;
+    const MOSCOW_UTC_OFFSET_HOURS = 3;
+    const FEEDING_DAY_START_HOUR = 2;
     const FEEDINGS_PER_DAY = 3;
     const FIRST_DAY_ORDINAL = Date.UTC(2026, 7, 14) / DAY_IN_MILLISECONDS;
     const LAST_DAY_ORDINAL = FIRST_DAY_ORDINAL + 29;
@@ -949,11 +952,15 @@
       return schedule;
     }
 
-    function getLocalDateParts(date) {
+    function getMoscowDateParts(date, hourAdjustment) {
+      const adjustedDate = new Date(date.getTime() +
+        (MOSCOW_UTC_OFFSET_HOURS + hourAdjustment) * HOUR_IN_MILLISECONDS);
+
       return {
-        year: date.getFullYear(),
-        monthIndex: date.getMonth(),
-        day: date.getDate()
+        year: adjustedDate.getUTCFullYear(),
+        monthIndex: adjustedDate.getUTCMonth(),
+        day: adjustedDate.getUTCDate(),
+        weekdayIndex: adjustedDate.getUTCDay()
       };
     }
 
@@ -971,8 +978,8 @@
       return parts.day + " " + MONTHS_GENITIVE[parts.monthIndex] + " " + parts.year;
     }
 
-    function formatToday(date, parts) {
-      return formatRussianDate(parts) + " · " + WEEKDAYS[date.getDay()];
+    function formatToday(parts) {
+      return formatRussianDate(parts) + " · " + WEEKDAYS[parts.weekdayIndex];
     }
 
     function formatGrams(value) {
@@ -980,8 +987,9 @@
     }
 
     function buildViewModel(date, schedule) {
-      const parts = getLocalDateParts(date);
-      const ordinal = getUtcDayOrdinal(parts);
+      const calendarParts = getMoscowDateParts(date, 0);
+      const feedingDayParts = getMoscowDateParts(date, -FEEDING_DAY_START_HOUR);
+      const ordinal = getUtcDayOrdinal(feedingDayParts);
       let phase;
       let scheduleIndex;
       let status;
@@ -1015,7 +1023,7 @@
         day: row.day,
         status: status,
         detail: detail,
-        today: formatToday(date, parts),
+        today: formatToday(calendarParts),
         showPlanNote: showPlanNote,
         portionA: formatGrams(portionA),
         portionB: formatGrams(portionB),
@@ -1105,7 +1113,7 @@
 
       function refresh() {
         const now = new Date();
-        const dateParts = getLocalDateParts(now);
+        const dateParts = getMoscowDateParts(now, 0);
         const dateKey = getLocalDateKey(dateParts);
         const model = buildViewModel(now, schedule);
         const modelKey = getDisplayKey(model);
